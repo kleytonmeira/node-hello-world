@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "CloudFormation template for creating a task definition"
 Resources:
-  MyTaskDefinition:
+  WorldTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
@@ -18,44 +18,44 @@ Resources:
           PortMappings:
             - ContainerPort: 8080
               Protocol: tcp
-  ECSCluster:
+  DEVCluster:
     Type: 'AWS::ECS::Cluster'
     Properties:
-      ClusterName: helloworldCluster
-  helloworldAlb:
+      ClusterName: DEVCluster
+  WorldAlb:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      Name: helloworldAlb
+      Name: WorldAlb
       Subnets:
         - subnet-7196b33b
         - subnet-02133232e724a030c
         - subnet-0bd7747e7c73bea6f
       Type: application
       SecurityGroups:
-        - !GetAtt helloworldAlbSG.GroupId
-  helloworldTargetGroup:
+        - !GetAtt WorldAlbSG.GroupId
+  WorldTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      Name: helloworldTargetGroup
+      Name: WorldTargetGroup
       VpcId: vpc-a19f3edb
       Protocol: HTTP
       Port: 8080
-      HealthCheckPath: /actuator/
+      HealthCheckPath: /
       TargetType: ip
-  Listener:
+  WorldListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
-        - TargetGroupArn: !Ref helloworldTargetGroup
+        - TargetGroupArn: !Ref WorldTargetGroup
           Type: forward
-      LoadBalancerArn: !Ref helloworldAlb
+      LoadBalancerArn: !Ref WorldAlb
       Port: 80
       Protocol: HTTP
-  helloworldAlbSG:
+  WorldAlbSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: SG for the helloworld ALB
-      GroupName: helloworldAlbSG
+      GroupDescription: SG for the World ALB
+      GroupName: WorldAlbSG
       SecurityGroupIngress:
         - CidrIpv6: ::/0
           FromPort: 80
@@ -67,26 +67,26 @@ Resources:
           ToPort: 80
           IpProtocol: TCP
           Description: 'Inbound rule for IPv4 traffic'
-  Alb2helloworldContainers:
+  Alb2WorldContainers:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: SG for traffic between ALB and containers
-      GroupName: Alb2helloworldContainers
+      GroupName: Alb2WorldContainers
       SecurityGroupIngress:
         - IpProtocol: -1
-          SourceSecurityGroupId: !GetAtt helloworldAlbSG.GroupId
+          SourceSecurityGroupId: !GetAtt WorldAlbSG.GroupId
           Description: 'Inbound rule for all traffic'
-  MyECSService:
+  WorldService:
     Type: AWS::ECS::Service
     DependsOn:
-      - Listener
+      - WorldListener
     Properties:
       LaunchType: FARGATE
       Cluster:
-        Ref: "ECSCluster"
+        Ref: "DEVCluster"
       DesiredCount: 2
       TaskDefinition:
-        Ref: "MyTaskDefinition"
+        Ref: "WorldTaskDefinition"
       DeploymentConfiguration:
         MaximumPercent: 100
         MinimumHealthyPercent: 0
@@ -94,10 +94,107 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !GetAtt Alb2helloworldContainers.GroupId
+            - !GetAtt Alb2WorldContainers.GroupId
           Subnets: ['subnet-7196b33b','subnet-02133232e724a030c','subnet-0bd7747e7c73bea6f']
       LoadBalancers:
         - TargetGroupArn:
-            Ref: helloworldTargetGroup
+            Ref: WorldTargetGroup
           ContainerPort: 8080
           ContainerName: helloworld
+###
+  PlanetTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - "FARGATE"
+      ExecutionRoleArn: "arn:aws:iam::466352289485:role/ecsTaskExecutionRole"
+      Cpu: 256
+      Memory: 512
+      NetworkMode: "awsvpc"
+      ContainerDefinitions:
+        - Name: "helloplanet"
+          Image: "466352289485.dkr.ecr.us-east-1.amazonaws.com/kleytonrepo/nodehelloplanet:latest"
+          MemoryReservation: 256
+          Memory: 512
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+  PlanetAlb:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: PlanetAlb
+      Subnets:
+        - subnet-7196b33b
+        - subnet-02133232e724a030c
+        - subnet-0bd7747e7c73bea6f
+      Type: application
+      SecurityGroups:
+        - !GetAtt PlanetAlbSG.GroupId
+  PlanetTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: PlanetTargetGroup
+      VpcId: vpc-a19f3edb
+      Protocol: HTTP
+      Port: 8080
+      HealthCheckPath: /
+      TargetType: ip
+  PlanetListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref PlanetTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref PlanetAlb
+      Port: 80
+      Protocol: HTTP
+  PlanetAlbSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: SG for the Planet ALB
+      GroupName: PlanetAlbSG
+      SecurityGroupIngress:
+        - CidrIpv6: ::/0
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: TCP
+          Description: 'Inbound rule for IPv6 traffic'
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: TCP
+          Description: 'Inbound rule for IPv4 traffic'
+  Alb2PlanetContainers:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: SG for traffic between ALB and containers
+      GroupName: Alb2PlanetContainers
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          SourceSecurityGroupId: !GetAtt PlanetAlbSG.GroupId
+          Description: 'Inbound rule for all traffic'
+  PlanetService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - PlanetListener
+    Properties:
+      LaunchType: FARGATE
+      Cluster:
+        Ref: "DEVCluster"
+      DesiredCount: 2
+      TaskDefinition:
+        Ref: "PlanetTaskDefinition"
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt Alb2PlanetContainers.GroupId
+          Subnets: ['subnet-7196b33b','subnet-02133232e724a030c','subnet-0bd7747e7c73bea6f']
+      LoadBalancers:
+        - TargetGroupArn:
+            Ref: PlanetTargetGroup
+          ContainerPort: 8080
+          ContainerName: helloplanet
