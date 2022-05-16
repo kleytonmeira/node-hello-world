@@ -44,11 +44,11 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: kleytonrepo/hello-world
-  ECS_SERVICE: MyFirstStack-MyECSService-LTeqyOV9nOFc
-  ECS_CLUSTER: MyFargateCluster
+  ECR_REPOSITORY: kleytonrepo/nodehelloworld
+  ECS_SERVICE: NodeHelloWorld-MyECSService-zwGbWfsqiwtD
+  ECS_CLUSTER: helloworldCluster
   ECS_TASK_DEFINITION: .aws/task-definition.json
-  CONTAINER_NAME: myawsplanet
+  CONTAINER_NAME: helloworld
 
 permissions:
   contents: read
